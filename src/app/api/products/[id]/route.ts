@@ -1,116 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { unlink } from "fs/promises";
-import path from "path";
 
-// GET - Fetch single product
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// GET - Fetch all products
+export async function GET() {
   try {
-    const { id } = await params;
-
-    const product = await db.product.findUnique({
-      where: { id },
-      include: {
-        category: true,
-      },
+    const products = await db.product.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { category: true },
     });
-
-    if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(product);
+    return NextResponse.json(products);
   } catch (error) {
-    console.error("Error fetching product:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch product" },
-      { status: 500 }
-    );
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }
 
-// DELETE - Delete a product
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// POST - Create a new product (Google Drive Only)
+export async function POST(request: NextRequest) {
   try {
-    const { id } = await params;
+    const formData = await request.formData();
+    
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const type = formData.get("type") as string;
+    const platform = formData.get("platform") as string;
+    const strategy = formData.get("strategy") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const isHot = formData.get("isHot") === "true";
+    const isFree = formData.get("isFree") === "true";
+    const googleDriveUrl = formData.get("googleDriveUrl") as string;
+    const fileName = formData.get("fileName") as string;
 
-    // Get product to find file paths
-    const product = await db.product.findUnique({
-      where: { id },
-    });
-
-    if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    }
-
-    // Delete files
-    try {
-      if (product.fileUrl) {
-        const filePath = path.join(process.cwd(), "public", product.fileUrl);
-        await unlink(filePath);
-      }
-      if (product.imageUrl) {
-        const imagePath = path.join(process.cwd(), "public", product.imageUrl);
-        await unlink(imagePath);
-      }
-    } catch (fileError) {
-      console.error("Error deleting files:", fileError);
-      // Continue even if file deletion fails
-    }
-
-    // Delete from database
-    await db.product.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT - Update a product
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const body = await request.json();
-
-    const product = await db.product.update({
-      where: { id },
+    // Simpan ke database (Tanpa proses file lokal agar tidak error 500 di Vercel)
+    const product = await db.product.create({
       data: {
-        name: body.name,
-        description: body.description,
-        type: body.type,
-        platform: body.platform,
-        strategy: body.strategy,
-        categoryId: body.categoryId,
-        isHot: body.isHot,
-        isFree: body.isFree,
-      },
-      include: {
-        category: true,
+        name,
+        description,
+        type,
+        platform,
+        strategy,
+        categoryId: categoryId || null,
+        isHot,
+        isFree,
+        googleDriveUrl,
+        fileName: fileName || name,
+        // Kita kosongkan fileUrl karena menggunakan Google Drive
+        fileUrl: null, 
+        imageUrl: null, 
       },
     });
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error("Error updating product:", error);
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 }
-    );
+    console.error("Upload error:", error);
+    return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
 }
