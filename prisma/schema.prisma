@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  icon        String?
+  description String?
+  order       Int        @default(0)
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Product {
+  id              String     @id @default(cuid())
+  name            String
+  slug            String     @unique
+  description     String
+  type            String     // "ea" or "indicator"
+  platform        String     // "mt4", "mt5", or "both"
+  strategy        String?    // "scalping", "trend", "grid", "martingale", etc.
+  version         String?
+  fileUrl         String?    // Local file path or null if using Google Drive
+  fileName        String?
+  fileSize        Float?
+  googleDriveUrl  String?    // Google Drive share link
+  googleDriveId   String?    // Extracted Google Drive file ID
+  imageUrl        String?
+  isHot           Boolean    @default(false)
+  isFree          Boolean    @default(true)
+  downloads       Int        @default(0)
+  rating          Float      @default(0)
+  ratingCount     Int        @default(0)
+  categoryId      String?
+  category        Category?  @relation(fields: [categoryId], references: [id])
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  avatar    String?
+  comment   String
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Broker {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  link        String
+  logoUrl     String?
+  features    String?  // JSON string of features
+  bonus       String?  // e.g., "Bonus 100%"
+  rating      Float    @default(5)
+  isRecommended Boolean @default(true)
+  order       Int      @default(0)
+  clicks      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tutorial {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   // "photo" or "video"
+  content     String   // Image URL for photo, YouTube/video URL for video
+  thumbnail   String?  // Thumbnail URL for video
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
