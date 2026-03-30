@@ -654,9 +654,9 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "manage" | "testimonials" | "brokers" | "tutorials">("upload");
   const [formData, setFormData] = useState({ name: "", description: "", type: "ea", platform: "mt4", strategy: "", categoryId: "", isHot: false, isFree: true });
-  const [file, setFile] = useState<File | null>(null);
+
   const [image, setImage] = useState<File | null>(null);
-  const [uploadMethod, setUploadMethod] = useState<"file" | "gdrive">("gdrive");
+  const [uploadMethod, setUploadMethod] = useState<"gdrive">("gdrive");
   const [googleDriveUrl, setGoogleDriveUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [testimonialForm, setTestimonialForm] = useState({ name: "", comment: "", rating: 5 });
@@ -677,16 +677,14 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (uploadMethod === "file" && !file) { toast.error("Pilih file terlebih dahulu"); return; }
-    if (uploadMethod === "gdrive" && !googleDriveUrl) { toast.error("Masukkan Google Drive URL"); return; }
-    if (uploadMethod === "file" && isVercel) { toast.error("Upload file hanya tersedia di localhost. Gunakan Google Drive di production."); return; }
+    if (!googleDriveUrl) { toast.error("Masukkan Google Drive URL"); return; }
     setUploading(true);
     try {
       const fd = new FormData(); fd.append("name", formData.name); fd.append("description", formData.description); fd.append("type", formData.type); fd.append("platform", formData.platform); fd.append("strategy", formData.strategy); fd.append("categoryId", formData.categoryId); fd.append("isHot", String(formData.isHot)); fd.append("isFree", String(formData.isFree));
-      if (uploadMethod === "file" && file) fd.append("file", file); else if (uploadMethod === "gdrive") { fd.append("googleDriveUrl", googleDriveUrl); fd.append("fileName", fileName || formData.name); }
+      fd.append("googleDriveUrl", googleDriveUrl); fd.append("fileName", fileName || formData.name);
       if (image) fd.append("image", image);
       const res = await fetch("/api/products", { method: "POST", body: fd });
-      if (res.ok) { const newProduct = await res.json(); setProducts((prev) => [newProduct, ...safeArray<Product>(prev)]); setFormData({ name: "", description: "", type: "ea", platform: "mt4", strategy: "", categoryId: "", isHot: false, isFree: true }); setFile(null); setImage(null); setGoogleDriveUrl(""); setFileName(""); toast.success("EA/Indicator berhasil diupload!"); }
+      if (res.ok) { const newProduct = await res.json(); setProducts((prev) => [newProduct, ...safeArray<Product>(prev)]); setFormData({ name: "", description: "", type: "ea", platform: "mt4", strategy: "", categoryId: "", isHot: false, isFree: true });  setImage(null); setGoogleDriveUrl(""); setFileName(""); toast.success("EA/Indicator berhasil diupload!"); }
       else { const errorData = await res.json(); toast.error(errorData.error || "Gagal mengupload"); }
     } catch { toast.error("Gagal mengupload"); } finally { setUploading(false); }
   };
@@ -726,11 +724,9 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
                 <div>
                   <label className="block text-sm font-medium mb-2">Sumber File *</label>
                   <div className="flex gap-2 mb-4">
-                    <Button type="button" variant={uploadMethod === "gdrive" ? "default" : "outline"} className={uploadMethod === "gdrive" ? "bg-primary text-primary-foreground flex-1" : "flex-1"} onClick={() => setUploadMethod("gdrive")}><ExternalLink className="w-4 h-4 mr-2" />Google Drive</Button>
-                    <Button type="button" variant={uploadMethod === "file" ? "default" : "outline"} className={uploadMethod === "file" ? "bg-primary text-primary-foreground flex-1" : "flex-1"} onClick={() => setUploadMethod("file")} disabled={isVercel}><Download className="w-4 h-4 mr-2" />{isVercel ? "Upload (Offline)" : "Upload File"}</Button>
-                    {isVercel && <span className="text-xs text-muted-foreground self-center">⚠️ Vercel</span>}
+                    <Button type="button" variant="default" className="bg-primary text-primary-foreground flex-1"><ExternalLink className="w-4 h-4 mr-2" />Google Drive</Button>
                   </div>
-                  {uploadMethod === "gdrive" ? (<div className="space-y-4"><div className="border-2 border-dashed border-border rounded-lg p-4 bg-primary/5"><Input type="url" value={googleDriveUrl} onChange={(e) => setGoogleDriveUrl(e.target.value)} placeholder="https://drive.google.com/file/d/xxx/view" className="bg-background" /><p className="text-xs text-muted-foreground mt-2">Paste link Google Drive yang sudah di-share</p></div><Input value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="Nama EA.ex4" className="bg-background" /></div>) : (<div className="border-2 border-dashed border-border rounded-lg p-4 text-center"><input type="file" accept=".ex4,.ex5,.mq4,.mq5" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full" /></div>)}
+                  <div className="space-y-4"><div className="border-2 border-dashed border-border rounded-lg p-4 bg-primary/5"><Input type="url" value={googleDriveUrl} onChange={(e) => setGoogleDriveUrl(e.target.value)} placeholder="https://drive.google.com/file/d/xxx/view" className="bg-background" /><p className="text-xs text-muted-foreground mt-2">Paste link Google Drive yang sudah di-share</p></div><Input value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="Nama EA.ex4" className="bg-background" /></div>
                 </div>
                 <div><div className="border-2 border-dashed border-border rounded-lg p-4 text-center"><input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} className="w-full" /></div></div>
                 <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={uploading}>{uploading ? "Uploading..." : <><Plus className="w-4 h-4 mr-2" />Upload</>}</Button>
