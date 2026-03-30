@@ -568,7 +568,7 @@ function ProductsSection() {
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === "all" ||
-      product.category?.slug === selectedCategory;
+      product.category?.name === selectedCategory;
     const matchesType =
       selectedType === "all" || product.type === selectedType;
     return matchesSearch && matchesCategory && matchesType;
