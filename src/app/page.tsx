@@ -115,6 +115,20 @@ interface Tutorial {
   isActive: boolean;
 }
 
+// Helper function to safely parse API responses
+function parseArrayResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object" && "data" in data) {
+    const nested = (data as { data: unknown }).data;
+    if (Array.isArray(nested)) {
+      return nested;
+    }
+  }
+  return [];
+}
+
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -543,8 +557,8 @@ function ProductsSection() {
         ]);
         const productsData = await productsRes.json();
         const categoriesData = await categoriesRes.json();
-        setProducts(productsData);
-        setCategories(categoriesData);
+        setProducts(parseArrayResponse<Product>(productsData));
+        setCategories(parseArrayResponse<Category>(categoriesData));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -562,22 +576,22 @@ function ProductsSection() {
     );
   };
 
- const filteredProducts = Array.isArray(products)
-  ? products.filter((product) => {
-      const matchesSearch =
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((product) => {
+        const matchesSearch =
+          product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "all" ||
-        product.category?.name === selectedCategory;
+        const matchesCategory =
+          selectedCategory === "all" ||
+          product.category?.name === selectedCategory;
 
-      const matchesType =
-        selectedType === "all" || product.type === selectedType;
+        const matchesType =
+          selectedType === "all" || product.type === selectedType;
 
-      return matchesSearch && matchesCategory && matchesType;
-    })
-  : [];
+        return matchesSearch && matchesCategory && matchesType;
+      })
+    : [];
 
 
   return (
@@ -622,7 +636,7 @@ function ProductsSection() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kategori</SelectItem>
-              {categories.map((category) => (
+              {Array.isArray(categories) && categories.map((category) => (
                 <SelectItem key={category.id} value={category.slug}>
                   {category.name}
                 </SelectItem>
@@ -868,7 +882,7 @@ function TutorialSection() {
       try {
         const res = await fetch("/api/tutorials");
         const data = await res.json();
-        setTutorials(data);
+        setTutorials(parseArrayResponse<Tutorial>(data));
       } catch (error) {
         console.error("Error fetching tutorials:", error);
       } finally {
@@ -878,9 +892,11 @@ function TutorialSection() {
     fetchTutorials();
   }, []);
 
-  const filteredTutorials = tutorials.filter((t) => 
-    activeTab === "all" || t.type === activeTab
-  );
+  const filteredTutorials = Array.isArray(tutorials)
+    ? tutorials.filter((t) => 
+        activeTab === "all" || t.type === activeTab
+      )
+    : [];
 
   // Extract YouTube video ID from URL
   const getYouTubeId = (url: string) => {
@@ -902,7 +918,7 @@ function TutorialSection() {
     );
   }
 
-  if (tutorials.length === 0) {
+  if (!Array.isArray(tutorials) || tutorials.length === 0) {
     return null;
   }
 
@@ -1073,7 +1089,7 @@ function TestimonialsSection() {
       try {
         const res = await fetch("/api/testimonials");
         const data = await res.json();
-        setTestimonials(data);
+        setTestimonials(parseArrayResponse<Testimonial>(data));
       } catch (error) {
         console.error("Error fetching testimonials:", error);
       } finally {
@@ -1097,7 +1113,7 @@ function TestimonialsSection() {
     );
   }
 
-  if (testimonials.length === 0) {
+  if (!Array.isArray(testimonials) || testimonials.length === 0) {
     return null;
   }
 
@@ -1405,8 +1421,9 @@ function BrokerSection() {
         const res = await fetch("/api/brokers");
         if (res.ok) {
           const data = await res.json();
-          if (data.length > 0) {
-            setBrokers(data);
+          const parsed = parseArrayResponse<Broker>(data);
+          if (parsed.length > 0) {
+            setBrokers(parsed);
           }
         }
       } catch (error) {
@@ -1443,7 +1460,7 @@ function BrokerSection() {
     );
   }
 
-  if (brokers.length === 0) {
+  if (!Array.isArray(brokers) || brokers.length === 0) {
     return null;
   }
 
@@ -1478,7 +1495,15 @@ function BrokerSection() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
           {brokers.map((broker) => {
-            const features = broker.features ? JSON.parse(broker.features) : [];
+            let features: string[] = [];
+            try {
+              const parsed = broker.features ? JSON.parse(broker.features) : [];
+              if (Array.isArray(parsed)) {
+                features = parsed;
+              }
+            } catch {
+              // features stays empty
+            }
             
             return (
               <motion.div key={broker.id} variants={fadeInUp}>
@@ -1951,7 +1976,6 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     comment: "",
     rating: 5,
   });
-  const [editingTestimonial, setEditingTestimonial] = useState<string | null>(null);
 
   // Broker state
   const [brokers, setBrokers] = useState<Broker[]>([]);
@@ -1965,7 +1989,6 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     rating: 5,
     isRecommended: true,
   });
-  const [editingBroker, setEditingBroker] = useState<string | null>(null);
 
   // Tutorial state
   const [tutorialForm, setTutorialForm] = useState({
@@ -1977,7 +2000,6 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     order: 0,
     isActive: true,
   });
-  const [editingTutorial, setEditingTutorial] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -1994,11 +2016,11 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         const testimonialsData = await testimonialsRes.json();
         const brokersData = await brokersRes.json();
         const tutorialsData = await tutorialsRes.json();
-        setProducts(productsData);
-        setCategories(categoriesData);
-        setTestimonials(testimonialsData);
-        setBrokers(brokersData);
-        setTutorials(tutorialsData);
+        setProducts(parseArrayResponse<Product>(productsData));
+        setCategories(parseArrayResponse<Category>(categoriesData));
+        setTestimonials(parseArrayResponse<Testimonial>(testimonialsData));
+        setBrokers(parseArrayResponse<Broker>(brokersData));
+        setTutorials(parseArrayResponse<Tutorial>(tutorialsData));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -2050,7 +2072,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
       if (res.ok) {
         const newProduct = await res.json();
-        setProducts([newProduct, ...products]);
+        setProducts((prev) => Array.isArray(prev) ? [newProduct, ...prev] : [newProduct]);
         setFormData({
           name: "",
           description: "",
@@ -2086,7 +2108,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         method: "DELETE",
       });
       if (res.ok) {
-        setProducts(products.filter((p) => p.id !== id));
+        setProducts((prev) => Array.isArray(prev) ? prev.filter((p) => p.id !== id) : []);
         toast.success("EA/Indicator berhasil dihapus");
       }
     } catch (error) {
@@ -2107,7 +2129,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
       if (res.ok) {
         const newTestimonial = await res.json();
-        setTestimonials([...testimonials, newTestimonial]);
+        setTestimonials((prev) => Array.isArray(prev) ? [...prev, newTestimonial] : [newTestimonial]);
         setTestimonialForm({ name: "", comment: "", rating: 5 });
         toast.success("Testimonial berhasil ditambahkan!");
       }
@@ -2125,7 +2147,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         method: "DELETE",
       });
       if (res.ok) {
-        setTestimonials(testimonials.filter((t) => t.id !== id));
+        setTestimonials((prev) => Array.isArray(prev) ? prev.filter((t) => t.id !== id) : []);
         toast.success("Testimonial berhasil dihapus");
       }
     } catch (error) {
@@ -2143,13 +2165,13 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...brokerForm,
-          features: brokerForm.features.split("\n").filter(f => f.trim()),
+          features: brokerForm.features.split("\n").filter((f) => f.trim()),
         }),
       });
 
       if (res.ok) {
         const newBroker = await res.json();
-        setBrokers([...brokers, newBroker]);
+        setBrokers((prev) => Array.isArray(prev) ? [...prev, newBroker] : [newBroker]);
         setBrokerForm({
           name: "",
           description: "",
@@ -2176,7 +2198,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         method: "DELETE",
       });
       if (res.ok) {
-        setBrokers(brokers.filter((b) => b.id !== id));
+        setBrokers((prev) => Array.isArray(prev) ? prev.filter((b) => b.id !== id) : []);
         toast.success("Broker berhasil dihapus");
       }
     } catch (error) {
@@ -2197,7 +2219,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
       if (res.ok) {
         const newTutorial = await res.json();
-        setTutorials([...tutorials, newTutorial]);
+        setTutorials((prev) => Array.isArray(prev) ? [...prev, newTutorial] : [newTutorial]);
         setTutorialForm({
           title: "",
           description: "",
@@ -2223,7 +2245,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
         method: "DELETE",
       });
       if (res.ok) {
-        setTutorials(tutorials.filter((t) => t.id !== id));
+        setTutorials((prev) => Array.isArray(prev) ? prev.filter((t) => t.id !== id) : []);
         toast.success("Tutorial berhasil dihapus");
       }
     } catch (error) {
@@ -2271,7 +2293,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             onClick={() => setActiveTab("manage")}
           >
             <Settings className="w-4 h-4 mr-2" />
-            Manage EA ({products.length})
+            Manage EA ({Array.isArray(products) ? products.length : 0})
           </Button>
           <Button
             variant={activeTab === "testimonials" ? "default" : "outline"}
@@ -2279,7 +2301,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             onClick={() => setActiveTab("testimonials")}
           >
             <MessageSquare className="w-4 h-4 mr-2" />
-            Testimonials ({testimonials.length})
+            Testimonials ({Array.isArray(testimonials) ? testimonials.length : 0})
           </Button>
           <Button
             variant={activeTab === "brokers" ? "default" : "outline"}
@@ -2287,7 +2309,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             onClick={() => setActiveTab("brokers")}
           >
             <Building2 className="w-4 h-4 mr-2" />
-            Brokers ({brokers.length})
+            Brokers ({Array.isArray(brokers) ? brokers.length : 0})
           </Button>
           <Button
             variant={activeTab === "tutorials" ? "default" : "outline"}
@@ -2295,7 +2317,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             onClick={() => setActiveTab("tutorials")}
           >
             <BookOpen className="w-4 h-4 mr-2" />
-            Tutorials ({tutorials.length})
+            Tutorials ({Array.isArray(tutorials) ? tutorials.length : 0})
           </Button>
         </div>
 
@@ -2391,7 +2413,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((cat) => (
+                          {Array.isArray(categories) && categories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id}>
                               {cat.name}
                             </SelectItem>
@@ -2584,7 +2606,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : products.length > 0 ? (
+              ) : Array.isArray(products) && products.length > 0 ? (
                 <div className="space-y-4">
                   {products.map((product) => (
                     <div
@@ -2698,7 +2720,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             <Card className="bg-card border-border">
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold mb-6">Daftar Testimonials</h2>
-                {testimonials.length > 0 ? (
+                {Array.isArray(testimonials) && testimonials.length > 0 ? (
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {testimonials.map((testimonial) => (
                       <div
@@ -2847,7 +2869,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             <Card className="bg-card border-border">
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold mb-6">Daftar Brokers</h2>
-                {brokers.length > 0 ? (
+                {Array.isArray(brokers) && brokers.length > 0 ? (
                   <div className="space-y-4 max-h-[600px] overflow-y-auto">
                     {brokers.map((broker) => (
                       <div
@@ -3014,7 +3036,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
             <Card className="bg-card border-border">
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold mb-6">Daftar Tutorials</h2>
-                {tutorials.length > 0 ? (
+                {Array.isArray(tutorials) && tutorials.length > 0 ? (
                   <div className="space-y-4 max-h-[600px] overflow-y-auto">
                     {tutorials.map((tutorial) => (
                       <div
@@ -3164,4 +3186,3 @@ export default function HomePage() {
     </main>
   );
 }
-// reload
