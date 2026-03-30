@@ -2,16 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin123";
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const username = String(body?.email ?? body?.username ?? "").trim().toLowerCase();
-    const password = String(body?.password ?? "").trim();
 
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
+    // DEBUG - Lihat apa yang diterima
+    console.log("=== DEBUG LOGIN ===");
+    console.log("Raw body:", body);
+    console.log("Type of body:", typeof body);
+    
+    const rawUser = body?.email ?? body?.username ?? "";
+    const rawPass = body?.password ?? "";
+    
+    const username = String(rawUser).trim().toLowerCase();
+    const password = String(rawPass).trim();
+
+    // DEBUG - Lihat hasil parse
+    console.log("Username:", JSON.stringify(username));
+    console.log("Password:", JSON.stringify(password));
+    console.log("Username len:", username.length);
+    console.log("Password len:", password.length);
+    console.log("User match:", username === "admin");
+    console.log("Pass match:", password === "admin123");
+
+    // Cek login
+    if (username === "admin" && password === "admin123") {
       const token = crypto.randomBytes(32).toString("hex");
 
       const cookieStore = await cookies();
@@ -30,9 +45,17 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Username atau password salah" },
+      { 
+        error: "Username atau password salah",
+        debug: {
+          receivedUsername: username,
+          receivedPasswordLength: password.length,
+          expectedPasswordLength: "admin123".length,
+        }
+      },
       { status: 401 }
     );
+
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
