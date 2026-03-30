@@ -562,17 +562,23 @@ function ProductsSection() {
     );
   };
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "all" ||
-      product.category?.name === selectedCategory;
-    const matchesType =
-      selectedType === "all" || product.type === selectedType;
-    return matchesSearch && matchesCategory && matchesType;
-  });
+ const filteredProducts = Array.isArray(products)
+  ? products.filter((product) => {
+      const matchesSearch =
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === "all" ||
+        product.category?.name === selectedCategory;
+
+      const matchesType =
+        selectedType === "all" || product.type === selectedType;
+
+      return matchesSearch && matchesCategory && matchesType;
+    })
+  : [];
+
 
   return (
     <section id="products" className="py-20 bg-card/50">
