@@ -9,14 +9,12 @@ Panduan deploy EA Platform ke berbagai hosting platform.
 Vercel adalah platform paling mudah untuk deploy Next.js.
 
 ### Prerequisites
-
 - Akun Vercel (https://vercel.com)
 - GitHub/GitLab/Bitbucket repository
 
 ### Steps
 
 1. **Push ke Git Repository**
-   
    ```bash
    git init
    git add .
@@ -26,7 +24,6 @@ Vercel adalah platform paling mudah untuk deploy Next.js.
    ```
 
 2. **Deploy ke Vercel**
-   
    - Buka https://vercel.com
    - Login / Sign up
    - Klik "New Project"
@@ -36,10 +33,8 @@ Vercel adalah platform paling mudah untuk deploy Next.js.
 
 3. **Set Environment Variables**
    Di Vercel Dashboard:
-   
    - Settings → Environment Variables
    - Tambahkan:
-     
      ```
      DATABASE_URL=file:./db/production.db
      NEXTAUTH_SECRET=your-secret-key-here
@@ -50,7 +45,6 @@ Vercel adalah platform paling mudah untuk deploy Next.js.
    Lo akan dapat URL seperti: `https://ea-platform.vercel.app`
 
 ### Vercel CLI (Optional)
-
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -66,7 +60,6 @@ vercel --prod
 Netlify juga support Next.js dengan plugin khusus.
 
 ### Prerequisites
-
 - Akun Netlify (https://netlify.com)
 - Git repository
 
@@ -75,7 +68,6 @@ Netlify juga support Next.js dengan plugin khusus.
 1. **Push ke Git Repository** (sama seperti Vercel)
 
 2. **Deploy ke Netlify**
-   
    - Buka https://app.netlify.com
    - Login / Sign up
    - Klik "Add new site" → "Import an existing project"
@@ -86,7 +78,6 @@ Netlify juga support Next.js dengan plugin khusus.
 
 3. **Set Environment Variables**
    Di Netlify Dashboard:
-   
    - Site settings → Environment variables
    - Tambahkan variables yang diperlukan
 
@@ -94,7 +85,6 @@ Netlify juga support Next.js dengan plugin khusus.
    Lo akan dapat URL seperti: `https://ea-platform.netlify.app`
 
 ### Netlify CLI (Optional)
-
 ```bash
 # Install Netlify CLI
 npm i -g netlify-cli
@@ -113,33 +103,28 @@ netlify deploy --prod
 Firebase Hosting untuk yang sudah familiar dengan Google Cloud.
 
 ### Prerequisites
-
 - Akun Google / Firebase (https://console.firebase.google.com)
 - Firebase CLI
 
 ### Steps
 
 1. **Install Firebase CLI**
-   
    ```bash
    npm install -g firebase-tools
    ```
 
 2. **Login ke Firebase**
-   
    ```bash
    firebase login
    ```
 
 3. **Buat Project Firebase**
-   
    - Buka https://console.firebase.google.com
    - Klik "Add project"
    - Ikuti langkah-langkahnya
    - Catat Project ID
 
 4. **Update .firebaserc**
-   
    ```json
    {
      "projects": {
@@ -149,7 +134,6 @@ Firebase Hosting untuk yang sudah familiar dengan Google Cloud.
    ```
 
 5. **Enable Firebase Functions**
-   
    ```bash
    # Upgrade project ke Blaze plan (required untuk functions)
    # Di Firebase Console → Billing → Upgrade
@@ -159,7 +143,6 @@ Firebase Hosting untuk yang sudah familiar dengan Google Cloud.
    ```
 
 ### Firebase CLI Commands
-
 ```bash
 # Initialize (first time)
 firebase init
@@ -181,19 +164,16 @@ firebase deploy --only functions
 ### Database (SQLite)
 
 Untuk production, SQLite tidak ideal karena:
-
 - File database akan di-reset setiap deploy
 - Tidak bisa scale horizontal
 
 **Recommended untuk production:**
-
 1. **Vercel/Netlify** → Gunakan Vercel Postgres, PlanetScale, atau Supabase
 2. **Firebase** → Gunakan Firestore
 
 ### Environment Variables
 
 Pastikan set environment variables ini:
-
 ```env
 DATABASE_URL="file:./db/production.db"  # atau connection string database lain
 NEXTAUTH_SECRET="generate-dengan-openssl-rand-base64-32"
@@ -201,7 +181,6 @@ NEXTAUTH_URL="https://your-domain.com"
 ```
 
 ### Generate NEXTAUTH_SECRET
-
 ```bash
 openssl rand -base64 32
 ```
@@ -210,30 +189,27 @@ openssl rand -base64 32
 
 ## 📦 Recommended Stack untuk Production
 
-| Platform | Database                      | File Storage     |
-| -------- | ----------------------------- | ---------------- |
-| Vercel   | Vercel Postgres / PlanetScale | Vercel Blob      |
-| Netlify  | Supabase / PlanetScale        | Netlify Blobs    |
-| Firebase | Firestore                     | Firebase Storage |
+| Platform | Database | File Storage |
+|----------|----------|--------------|
+| Vercel | Vercel Postgres / PlanetScale | Vercel Blob |
+| Netlify | Supabase / PlanetScale | Netlify Blobs |
+| Firebase | Firestore | Firebase Storage |
 
 ---
 
 ## 🆘 Troubleshooting
 
 ### Build Failed
-
 - Check Node.js version (minimum 18)
 - Check dependencies: `bun install`
 - Check build log untuk error details
 
 ### API Routes Not Working
-
 - Pastikan environment variables sudah diset
 - Check function timeout settings
 - Check logs di dashboard
 
 ### Database Issues
-
 - Pastikan DATABASE_URL benar
 - Run migrations: `bun run db:push`
 - Check database connection
@@ -243,6 +219,5 @@ openssl rand -base64 32
 ## 📞 Support
 
 Kalau ada masalah, bisa contact:
-
-- Email: fennyia34@gmail.com
+- Email: dewakupas@example.com
 - Saweria: https://saweria.co/dewakupas

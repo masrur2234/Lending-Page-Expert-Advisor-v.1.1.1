@@ -1,0 +1,24 @@
+{
+  "name": "EA Platform - Download EA & Indicator MT4/MT5 Gratis",
+  "short_name": "EA Platform",
+  "description": "Download EA dan Indicator MT4/MT5 gratis tanpa batas. Auto trading, no ribet. Tinggal pakai, gas cuan!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F1A",
+  "theme_color": "#00FFB2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["finance", "business"]
+}
